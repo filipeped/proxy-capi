@@ -5,26 +5,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "*");
 
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method Not Allowed" });
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
 
   try {
-    const ip =
-      req.headers["x-forwarded-for"] ||
-      req.headers["x-real-ip"] ||
-      req.socket?.remoteAddress ||
-      "0.0.0.0";
-
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Sao_Paulo";
-    const language = req.headers["accept-language"]?.split(",")[0] || "pt-BR";
-
     const payload = {
       ...req.body,
-      client_ip_address: ip,
-      client_user_agent: req.headers["user-agent"] || "",
-      client_language: language,
-      client_timezone: timezone,
-      source: req.body?.source || "event_generic",
+      client_ip_address: req.headers["x-forwarded-for"] || undefined,
     };
 
     const response = await fetch(
@@ -33,8 +25,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Forwarded-For": typeof ip === "string" ? ip : "",
-          "X-Real-IP": typeof ip === "string" ? ip : "",
         },
         body: JSON.stringify(payload),
       }
